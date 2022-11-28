@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?><artifacts>
+    <artifact name="ClientDispatcher_Validate_json" groupId="it.appio.dispatcher.resource" version="1.0.0" type="registry/resource" serverRole="EnterpriseIntegrator">
+        <item>
+            <file>ClientDispatcher_Validate.json</file>
+            <path>/_system/governance/ClientDispatcher/schemas</path>
+            <mediaType>application/json</mediaType>
+        </item>
+    </artifact>
+</artifacts>

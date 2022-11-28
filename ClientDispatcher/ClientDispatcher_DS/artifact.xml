@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?><artifacts>
+    <artifact name="ClientDispatcher_DS" groupId="it.appio.dispatcher.dataservice" version="1.0.0" type="service/dataservice" serverRole="DataServicesServer">
+        <file>dataservice/ClientDispatcher_DS.dbs</file>
+    </artifact>
+</artifacts>

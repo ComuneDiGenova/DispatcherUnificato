@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/dispatcherUnificato" name="Client_Dispatcher_API" xmlns="http://ws.apache.org/ns/synapse">
+    <resource faultSequence="Client_Dispatcher_FaultSeq" inSequence="Client_Dispatcher_InSeq" methods="POST" outSequence="Client_Dispatcher_OutSeq" url-mapping="/notifica"/>
+    <resource methods="GET" url-mapping="/status">
+        <inSequence>
+            <log description="Start" level="custom">
+                <property name="DispatcherUni_Status" value="START"/>
+            </log>
+            <property description="RemoveResponseCode" name="SC_ACCEPTED" scope="axis2" type="STRING" value="false"/>
+            <property description="SetSC" name="HTTP_SC" scope="axis2" type="STRING" value="200"/>
+            <property description="SetSC_DESC" name="HTTP_SC_DESC" scope="axis2" type="STRING" value="Ok"/>
+            <payloadFactory description="MsgRispostaOk" media-type="json">
+                <format> {
+		    	             "status": "ok"
+		         		 }
+				</format>
+                <args/>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+</api>

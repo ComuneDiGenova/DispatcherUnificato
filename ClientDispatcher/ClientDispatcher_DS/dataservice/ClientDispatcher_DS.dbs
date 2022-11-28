@@ -1,0 +1,81 @@
+<data name="ClientDispatcher_DS" serviceGroup="" serviceNamespace="ClientDispatcher" transports="http https local">
+    <config id="ClientDispatcher_DS">
+        <property name="carbon_datasource_name">ClientDispatcher_DS</property>
+    </config>
+    <!-- Query di verifica sul valore di TIPO_INVIO -->
+    <query id="q_TIPO_INVIO_APPIO" useConfig="ClientDispatcher_DS">
+        <sql>select * from IO_CONFIGURAZIONE where TIPO_BATCH=?</sql>
+        <result element="io_config">
+            <element column="TIPO_BATCH" name="TIPO_INVIO_TABELLA" xsdType="string"/>
+            <element column="TOKEN" name="TOKEN_TABELLA" xsdType="string"/>
+            <element column="PAYLOAD_TYPE" name="PAYLOAD_TYPE_TABELLA" xsdType="string"/>
+            <element column="PAYLOAD_MEX" name="PAYLOAD_MEX_TABELLA" xsdType="string"/>
+            <element column="SUBJECT" name="SUBJECT_TABELLA" xsdType="string"/>
+            <element column="TIME_TO_LIVE" name="TTL_TABELLA" xsdType="integer"/>
+            <element column="RIPETIBILE" name="RIPETIBILE_TABELLA" xsdType="string"/>
+            <element column="MESSAGGIO_BASE" name="MESSAGGIO_BASE_TABELLA" xsdType="string"/>
+            <element column="NOTE" name="NOTE_TABELLA" xsdType="string"/>
+            <element column="ID_STATO_REC" name="ID_STATO_REC_TABELLA" xsdType="integer"/>
+            <element column="TIPO_DESC_ESTESA" name="TIPO_DESC_ESTESA_TABELLA" xsdType="string"/>
+        </result>
+        <param name="TIPO_BATCH" paramType="SCALAR" sqlType="STRING" type="IN"/>
+    </query>
+    <operation name="controlloTipoInvioAppIO">
+        <call-query href="q_TIPO_INVIO_APPIO">
+            <with-param name="TIPO_BATCH" query-param="TIPO_BATCH"/>
+        </call-query>
+    </operation>
+    <!-- Query per estrarre ID_ESITI dalla sequence -->
+    <query id="q_ID_LOG_APPIO" useConfig="ClientDispatcher_DS">
+        <sql>select IO_ESITI_SEQ.nextval from dual</sql>
+        <result element="nextval">
+            <element column="NEXTVAL" name="ID_ESITI_DB" xsdType="integer"/>
+        </result>
+        <param name="ID_ESITI_DB" paramType="SCALAR" sqlType="NUMERIC" type="OUT"/>
+    </query>
+    <operation name="calcoloIDLogAppIO">
+        <call-query href="q_ID_LOG_APPIO"/>
+    </operation>
+    <!-- Inserimento in tabella IO_ESITI -->
+    <query id="q_LOG_APPIO" useConfig="ClientDispatcher_DS">
+        <sql>insert into IO_ESITI ( ID_ESITI, CODICE_FISCALE, TIPO_INVIO, DATA_INIZIO, DATA_FINE, RESPONSE_CODE, RESPONSE_DESC, MESSAGE_ID, NOTE, COD_INVIO, ID_CODA, REQUEST, RESPONSE, IS_PAYMENT, NOTICE_NUMBER, INVIO_TENTATO, TIPO_DESC_ESTESA ) values (?, ?, ?, TO_TIMESTAMP(?,'DD-MM-YYYY HH24:MI:SS.FF3'), TO_TIMESTAMP(?,'DD-MM-YYYY HH24:MI:SS.FF3'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)</sql>
+        <param name="ID_ESITI" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="CODICE_FISCALE" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="TIPO_INVIO" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="DATA_INIZIO" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="DATA_FINE" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="RESPONSE_CODE" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="RESPONSE_DESC" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="MESSAGE_ID" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="NOTE" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="COD_INVIO" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="ID_CODA" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="REQUEST" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="RESPONSE" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="IS_PAYMENT" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="NOTICE_NUMBER" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="INVIO_TENTATO" paramType="SCALAR" sqlType="STRING" type="IN"/>
+        <param name="TIPO_DESC_ESTESA" paramType="SCALAR" sqlType="STRING" type="IN"/>
+    </query>
+    <operation name="registraLogAppIO">
+        <call-query href="q_LOG_APPIO">
+            <with-param name="ID_ESITI" query-param="ID_ESITI"/>
+            <with-param name="CODICE_FISCALE" query-param="CODICE_FISCALE"/>
+            <with-param name="TIPO_INVIO" query-param="TIPO_INVIO"/>
+            <with-param name="DATA_INIZIO" query-param="DATA_INIZIO"/>
+            <with-param name="DATA_FINE" query-param="DATA_FINE"/>
+            <with-param name="RESPONSE_CODE" query-param="RESPONSE_CODE"/>
+            <with-param name="RESPONSE_DESC" query-param="RESPONSE_DESC"/>
+            <with-param name="MESSAGE_ID" query-param="MESSAGE_ID"/>
+            <with-param name="NOTE" query-param="NOTE"/>
+            <with-param name="COD_INVIO" query-param="COD_INVIO"/>
+            <with-param name="ID_CODA" query-param="ID_CODA"/>
+            <with-param name="REQUEST" query-param="REQUEST"/>
+            <with-param name="RESPONSE" query-param="RESPONSE"/>
+            <with-param name="IS_PAYMENT" query-param="IS_PAYMENT"/>
+            <with-param name="NOTICE_NUMBER" query-param="NOTICE_NUMBER"/>
+            <with-param name="INVIO_TENTATO" query-param="INVIO_TENTATO"/>
+            <with-param name="TIPO_DESC_ESTESA" query-param="TIPO_DESC_ESTESA"/>
+        </call-query>
+    </operation>
+</data>

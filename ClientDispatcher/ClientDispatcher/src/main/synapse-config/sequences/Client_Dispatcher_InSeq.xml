@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="Client_Dispatcher_InSeq" onError="Client_Dispatcher_FaultSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <log description="Start" level="custom">
+        <property name="DispatcherUni" value="START"/>
+    </log>
+    <log category="DEBUG" description="InSeqStart" level="custom">
+        <property name="DispatcherUni_InSeq" value="START"/>
+    </log>
+    <!-- Calcolo il timestamp per DATA_INIZIO -->
+    <property description="DATA_INIZIO" expression="get-property(&quot;SYSTEM_DATE&quot;, &quot;dd-MM-yyyy' 'HH:mm:ss.SSS&quot;)" name="DATA_INIZIO" scope="default" type="STRING"/>
+    <!-- Inizializzo il flag di errore -->
+    <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="KO"/>
+    <!-- Inizializzo il tentativo di invio -->
+    <property description="InvioTentato" name="INVIO_TENTATO" scope="default" type="STRING" value="TRUE"/>
+    <!-- Salvo e stampo la request inziale -->
+    <property description="Request" expression="json-eval($.)" name="REQUEST" scope="default" type="STRING"/>
+    <log category="DEBUG" description="Request" level="custom">
+        <property expression="$ctx:REQUEST" name="Request"/>
+    </log>
+    <!-- Estraggo i parametri della request -->
+    <property description="CF" expression="json-eval($.fiscal_code)" name="FISCAL_CODE" scope="default" type="STRING"/>
+    <property description="Token" expression="json-eval($.token)" name="TOKEN" scope="default" type="STRING"/>
+    <property description="TTL" expression="json-eval($.time_to_live)" name="TTL" scope="default" type="STRING"/>
+    <property description="TipoInvio" expression="json-eval($.tipo_invio)" name="TIPO_INVIO" scope="default" type="STRING"/>
+    <property description="IdCoda" expression="json-eval($.id_coda)" name="ID_CODA" scope="default" type="STRING"/>
+    <property description="Note" expression="json-eval($.note)" name="NOTE" scope="default" type="STRING"/>
+    <property description="Subject" expression="json-eval($.content.subject)" name="SUBJECT" scope="default" type="STRING"/>
+    <property description="Markdown" expression="json-eval($.content.markdown)" name="MARKDOWN" scope="default" type="STRING"/>
+    <property description="DueDate" expression="json-eval($.content.due_date)" name="DUE_DATE" scope="default" type="STRING"/>
+    <property description="NoticeNumber" expression="json-eval($.content.payment_data.notice_number)" name="NOTICE_NUMBER" scope="default" type="STRING"/>
+    <!-- Stampo TIPO_INVIO per capire quale servizio specifico viene chiamato -->
+    <log category="DEBUG" description="TipoInvio" level="custom">
+        <property expression="$ctx:TIPO_INVIO" name="TIPO_INVIO"/>
+    </log>
+    <!-- Stampo ID_CODA per capire quale riga della coda sto inviando (se batch) -->
+    <log category="DEBUG" description="IdCoda" level="custom">
+        <property expression="$ctx:ID_CODA" name="ID_CODA"/>
+    </log>
+    <!-- Flag isPayment -->
+    <switch description="Switch su NoticeNumber" source="$ctx:NOTICE_NUMBER">
+        <case regex="^(?!\s*$).+">
+            <property description="IsPaymentTrue" name="IS_PAYMENT" scope="default" type="STRING" value="TRUE"/>
+        </case>
+        <default>
+            <property description="IsPaymentFalse" name="IS_PAYMENT" scope="default" type="STRING" value="FALSE"/>
+        </default>
+    </switch>
+    <log category="DEBUG" description="IsPayment" level="custom">
+        <property expression="$ctx:IS_PAYMENT" name="IS_PAYMENT"/>
+    </log>
+    <!-- Verifico che il TIPO_INVIO sia corretto facendo query su IO_CONFIGURAZIONE -->
+    <header name="Action" scope="default" value="controlloTipoInvioAppIO"/>
+    <payloadFactory description="DBRequest" media-type="xml">
+        <format>
+            <controlloTipoInvioAppIO>
+                <TIPO_BATCH>$1</TIPO_BATCH>
+            </controlloTipoInvioAppIO>
+        </format>
+        <args>
+            <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+        </args>
+    </payloadFactory>
+    <call description="controlloTipoInvioAppIO">
+        <endpoint>
+            <address format="soap11" statistics="enable" trace="enable" uri="http://localhost:8280/services/ClientDispatcher_DS"/>
+        </endpoint>
+    </call>
+    <!-- Verifico la risposta del DB -->
+    <switch description="Switch su SC_DB" source="$axis2:HTTP_SC">
+        <case regex="200">
+            <property description="TIPO_INVIO_TABELLA" expression="json-eval($.io_config.TIPO_INVIO_TABELLA)" name="TIPO_INVIO_TABELLA" scope="default" type="STRING"/>
+            <log category="DEBUG" description="TIPO_INVIO_TABELLA" level="custom">
+                <property expression="$ctx:TIPO_INVIO_TABELLA" name="TIPO_INVIO_TABELLA"/>
+            </log>
+            <property description="TIPO_DESC_ESTESA_TABELLA" expression="json-eval($.io_config.TIPO_DESC_ESTESA_TABELLA)" name="TIPO_DESC_ESTESA" scope="default" type="STRING"/>
+            <log category="DEBUG" description="TIPO_DESC_ESTESA" level="custom">
+                <property expression="$ctx:TIPO_DESC_ESTESA" name="TIPO_DESC_ESTESA"/>
+            </log>
+            <switch description="Switch su TipoInvioTabella" source="$ctx:TIPO_INVIO_TABELLA">
+                <case regex="^(?!\s*$).+">
+                    <log category="DEBUG" description="TipoInvioTabella OK" level="custom">
+                        <property name="MATCH TIPO INVIO" value="OK"/>
+                    </log>
+                </case>
+                <default>
+                    <log category="ERROR" description="TipoInvioTabella KO" level="custom">
+                        <property name="MATCH TIPO INVIO" value="NOT OK!!!"/>
+                    </log>
+                    <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="TIPO_INVIO_INVALIDO"/>
+                    <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Errore di payload invalido"/>
+                    <property description="InvioTentato" name="INVIO_TENTATO" scope="default" type="STRING" value="FALSE"/>
+                    <loopback/>
+                </default>
+            </switch>
+        </case>
+        <default>
+            <log category="ERROR" description="ErroreIoConfig" level="custom">
+                <property name="TIPO_INVIO_TABELLA" value="NON ESTRATTO DAL DB!!!"/>
+            </log>
+            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="ERRORE_LATO_DB"/>
+            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Errore lato DB"/>
+            <property description="InvioTentato" name="INVIO_TENTATO" scope="default" type="STRING" value="FALSE"/>
+            <loopback/>
+        </default>
+    </switch>
+    <!-- Visto che TIPO_INVIO va bene, ritorno al payload iniziale -->
+    <property description="RemoveResponseCode" name="SC_ACCEPTED" scope="axis2" type="STRING" value="false"/>
+    <payloadFactory description="Restore Initial Message" media-type="json">
+        <format>$1</format>
+        <args>
+            <arg evaluator="xml" expression="$ctx:REQUEST"/>
+        </args>
+    </payloadFactory>
+    <!-- Valido la request -->
+    <log category="DEBUG" description="ValidateStart" level="custom">
+        <property name="Validate" value="START"/>
+    </log>
+    <validate cache-schema="true">
+        <schema key="gov:ClientDispatcher/schemas/ClientDispatcher_Validate.json"/>
+        <on-fail>
+            <log category="ERROR" description="Log Validate Mediator" level="custom">
+                <property name="Validate" value="NOT OK!"/>
+            </log>
+            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="INVALID_PAYLOAD"/>
+            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Errore di payload invalido"/>
+            <property description="InvioTentato" name="INVIO_TENTATO" scope="default" type="STRING" value="FALSE"/>
+            <loopback/>
+        </on-fail>
+    </validate>
+    <log category="DEBUG" description="ValidateEnd" level="custom">
+        <property name="Validate" value="OK"/>
+    </log>
+    <!-- Verifico se il cittadino ha scaricato AppIO ed ha sottoscritto il servizio (/profiles/{fiscal_code}) -->
+    <header description="Token in Header" expression="$ctx:TOKEN" name="Ocp-Apim-Subscription-Key" scope="transport"/>
+    <property description="Set Context" expression="fn:concat('/profiles/',get-property('FISCAL_CODE'))" name="REST_URL_POSTFIX" scope="axis2" type="STRING"/>
+    <property description="GET" name="HTTP_METHOD" scope="axis2" type="STRING" value="GET"/>
+    <property description="No Body" name="NO_ENTITY_BODY" scope="axis2" type="BOOLEAN" value="true"/>
+    <call>
+        <endpoint key="AppIOBackend_EP"/>
+    </call>
+    <!-- Analizzo la risposta e se positiva procedo all'invio del messaggio -->
+    <log category="DEBUG" description="Response/Profiles" level="custom">
+        <property expression="json-eval($.)" name="Response/Profiles"/>
+    </log>
+    <switch description="Switch su SC/Profiles" source="$axis2:HTTP_SC">
+        <case regex="200">
+            <property description="IsSenderAllowed" expression="json-eval($.sender_allowed)" name="IS_SENDER_ALLOWED" scope="default" type="STRING"/>
+            <switch description="Switch su IsSenderAllowed" source="$ctx:IS_SENDER_ALLOWED">
+                <case regex="true">
+                    <log category="DEBUG" description="True" level="custom">
+                        <property name="CF" value="registrato al servizio"/>
+                    </log>
+                    <payloadFactory description="Restore Initial Message" media-type="json">
+                        <format>$1</format>
+                        <args>
+                            <arg evaluator="xml" expression="$ctx:REQUEST"/>
+                        </args>
+                    </payloadFactory>
+                    <!-- Procedo all'invio -->
+                    <property action="remove" description="Drop old Headers" name="TRANSPORT_HEADERS" scope="axis2"/>
+                    <header description="Set Token into Header" expression="get-property('TOKEN')" name="Ocp-Apim-Subscription-Key" scope="transport"/>
+                    <property description="Set Context" name="REST_URL_POSTFIX" scope="axis2" type="STRING" value="/messages"/>
+                    <property description="POST" name="HTTP_METHOD" scope="axis2" type="STRING" value="POST"/>
+                    <call>
+                        <endpoint key="AppIOBackend_EP"/>
+                    </call>
+                    <!-- Stampo la risposta e controllo SC -->
+                    <log category="DEBUG" description="Response/Messages" level="custom">
+                        <property expression="json-eval($.)" name="Response/Messages"/>
+                    </log>
+                    <switch description="Switch su SC/Messages" source="$axis2:HTTP_SC">
+                        <case regex="201">
+                            <log category="DEBUG" description="ResponseOk" level="custom">
+                                <property name="RispostaAppIO" value="OK"/>
+                            </log>
+                            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="OK"/>
+                            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Invio completato con successo"/>
+                        </case>
+                        <case regex="400">
+                            <log category="WARN" description="ResponseNotOk" level="custom">
+                                <property name="RispostaAppIO" value="NOT OK!"/>
+                            </log>
+                            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="KO"/>
+                            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Errore backend a livello /messages - invalid payload"/>
+                        </case>
+                        <case regex="500">
+                            <log category="WARN" description="ResponseNotOk" level="custom">
+                                <property name="RispostaAppIO" value="NOT OK!"/>
+                            </log>
+                            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="KO"/>
+                            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Errore backend a livello /messages - the message cannot be delivered"/>
+                        </case>
+                        <default>
+                            <log category="WARN" description="ResponseNotOk" level="custom">
+                                <property name="RispostaAppIO" value="NOT OK!"/>
+                            </log>
+                            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="KO"/>
+                            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Errore backend a livello /messages"/>
+                            <!-- In questi casi AppIO non risponde con un payload di errore, quindi va costruito a mano -->
+                            <payloadFactory description="MsgRispostaErrore" media-type="json">
+                                <format> {
+                                           "title": "$1",
+                                           "status": "$2",
+                                           "detail": "Errore backend AppIO a livello /messages"
+                                         }
+								</format>
+                                <args>
+                                    <arg evaluator="xml" expression="$axis2:HTTP_SC_DESC"/>
+                                    <arg evaluator="xml" expression="$axis2:HTTP_SC"/>
+                                </args>
+                            </payloadFactory>
+                        </default>
+                    </switch>
+                    <!-- Passo alla out sequence dove preparo il payload di risposta al client e scrivo su DB -->
+                </case>
+                <default>
+                    <log category="WARN" description="False" level="custom">
+                        <property name="CF" value="NON registrato al servizio"/>
+                    </log>
+                    <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="KO"/>
+                    <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="CF non sottoscritto al servizio"/>
+                    <property description="RemoveResponseCode" name="SC_ACCEPTED" scope="axis2" type="STRING" value="false"/>
+                    <property description="SetSC" name="HTTP_SC" scope="axis2" type="STRING" value="405"/>
+                    <property description="SetSC_DESC" name="HTTP_SC_DESC" scope="axis2" type="STRING" value="The user is not subscribed to this service"/>
+                    <payloadFactory description="MsgRispostaErrore" media-type="json">
+                        <format> {
+                                   "title": "The user is not subscribed to this service",
+                                   "status": "405",
+                                   "detail": "The user has manually unsubscribed from this service"
+                                 }
+						</format>
+                        <args/>
+                    </payloadFactory>
+                    <!-- Passo alla out sequence dove preparo il payload di risposta al client e scrivo su DB -->
+                </default>
+            </switch>
+        </case>
+        <case regex="404">
+            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="KO"/>
+            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="CF non presente su AppIO"/>
+            <log category="WARN" description="Invio impossibile" level="custom">
+                <property name="Invio" value="impossibile"/>
+            </log>
+            <log category="WARN" description="Error Title" level="custom">
+                <property expression="json-eval($.title)" name="ERROR_TITLE"/>
+            </log>
+            <log category="WARN" description="Error Status" level="custom">
+                <property expression="json-eval($.status)" name="ERROR_STATUS_CODE"/>
+            </log>
+            <log category="WARN" description="Error Detail" level="custom">
+                <property expression="json-eval($.detail)" name="ERROR_DETAIL"/>
+            </log>
+            <!-- Passo alla out sequence dove preparo il payload di risposta al client e scrivo su DB -->
+        </case>
+        <default>
+            <property description="ErrorFlag" name="ERROR_FLAG" scope="default" type="STRING" value="KO"/>
+            <property description="AppIOFinalResult" name="APPIO_FINAL_RESULT" scope="default" type="STRING" value="Errore backend AppIO a livello /profiles"/>
+            <!-- In questi casi AppIO non risponde con un payload di errore, quindi va costruito a mano -->
+            <payloadFactory description="MsgRispostaErrore" media-type="json">
+                <format> {
+                           "title": "$1",
+                           "status": "$2",
+                           "detail": "Errore backend AppIO a livello /profiles"
+                    	 }
+				</format>
+                <args>
+                    <arg evaluator="xml" expression="$axis2:HTTP_SC_DESC"/>
+                    <arg evaluator="xml" expression="$axis2:HTTP_SC"/>
+                </args>
+            </payloadFactory>
+            <log category="WARN" description="Invio impossibile" level="custom">
+                <property name="Invio" value="impossibile"/>
+            </log>
+            <log category="WARN" description="Error Title" level="custom">
+                <property expression="json-eval($.title)" name="ERROR_TITLE"/>
+            </log>
+            <log category="WARN" description="Error Status" level="custom">
+                <property expression="json-eval($.status)" name="ERROR_STATUS_CODE"/>
+            </log>
+            <log category="WARN" description="Error Detail" level="custom">
+                <property expression="json-eval($.detail)" name="ERROR_DETAIL"/>
+            </log>
+            <!-- Passo alla out sequence dove preparo il payload di risposta al client e scrivo su DB -->
+        </default>
+    </switch>
+    <log category="DEBUG" description="PayloadInSequenceEnd" level="custom">
+        <property expression="json-eval($.)" name="PayloadInSequenceEnd"/>
+    </log>
+    <log category="DEBUG" description="InSeqEnd" level="custom">
+        <property name="DispatcherUni_InSeq" value="END"/>
+    </log>
+    <loopback/>
+</sequence>

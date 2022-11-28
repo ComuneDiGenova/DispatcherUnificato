@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="Client_Dispatcher_FaultSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <log category="WARN" description="FaultSeqStart" level="custom">
+        <property expression="get-property('LogID')" name="LogID"/>
+        <property name="Dispatcher_FaultSeq" value="START"/>
+    </log>
+    <log category="ERROR" description="Error_Message" level="custom">
+        <property expression="get-property('LogID')" name="LogID"/>
+        <property expression="get-property('ERROR_MESSAGE')" name="Message"/>
+    </log>
+    <log category="WARN" description="Error_Code" level="custom">
+        <property expression="get-property('LogID')" name="LogID"/>
+        <property expression="get-property('ERROR_CODE')" name="Code"/>
+    </log>
+    <log category="WARN" description="Error_Detail" level="custom">
+        <property expression="get-property('LogID')" name="LogID"/>
+        <property expression="get-property('ERROR_DETAIL')" name="Detail"/>
+    </log>
+    <payloadFactory description="MsgRispostaErrore" media-type="json">
+        <format> {
+    	             "id": "non generato",
+    	             "fiscal_code": "$1",
+    	             "cod_invio": "$2",
+    	             "tipo_invio": "$3",
+    	             "errore": {
+    	                 "title": "$4",
+    	                 "status": "$5",
+    	                 "detail": "$6"
+             		 }
+         		 }
+		</format>
+        <args>
+            <arg evaluator="xml" expression="$ctx:FISCAL_CODE"/>
+            <arg evaluator="xml" expression="$ctx:LogID"/>
+            <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+            <arg evaluator="xml" expression="get-property('ERROR_MESSAGE')"/>
+            <arg evaluator="xml" expression="get-property('ERROR_CODE')"/>
+            <arg evaluator="xml" expression="get-property('ERROR_DETAIL')"/>
+        </args>
+    </payloadFactory>
+    <log category="DEBUG" description="PayloadRispostaErrore" level="custom">
+        <property expression="get-property('LogID')" name="LogID"/>
+        <property expression="json-eval($.)" name="RispostaErrore"/>
+    </log>
+    <property description="RemoveResponseCode" name="SC_ACCEPTED" scope="axis2" type="STRING" value="false"/>
+    <property description="SetSC" name="HTTP_SC" scope="axis2" type="STRING" value="500"/>
+    <property description="SetSC_DESC" name="HTTP_SC_DESC" scope="axis2" type="STRING" value="The message cannot be delivered"/>
+    <property name="messageType" scope="axis2" type="STRING" value="application/problem+json"/>
+    <log category="WARN" description="FaultSeqEnd" level="custom">
+        <property expression="get-property('LogID')" name="LogID"/>
+        <property name="Dispatcher_FaultSeq" value="END"/>
+    </log>
+    <respond/>
+</sequence>

@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sequence name="Client_Dispatcher_OutSeq" onError="Client_Dispatcher_FaultSeq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
+    <log category="DEBUG" description="OutSeqStart" level="custom">
+        <property name="DispatcherUni_OutSeq" value="START"/>
+    </log>
+    <!-- Calcolo il timestamp per DATA_FINE -->
+    <property description="DATA_FINE" expression="get-property(&quot;SYSTEM_DATE&quot;, &quot;dd-MM-yyyy' 'HH:mm:ss.SSS&quot;)" name="DATA_FINE" scope="default" type="STRING"/>
+    <!-- Verifichiamo l'esito dell'invio -->
+    <switch description="Switch su ERROR_FLAG" source="$ctx:ERROR_FLAG">
+        <case regex="OK">
+            <property description="MESSAGE_ID" expression="json-eval($.id)" name="MESSAGE_ID" scope="default" type="STRING"/>
+            <property description="SC_APPIO" name="SC_APPIO" scope="default" type="STRING" value="201"/>
+            <property description="SC_DESC_APPIO" name="SC_DESC_APPIO" scope="default" type="STRING" value="Message created"/>
+            <payloadFactory description="MsgRispostaOk" media-type="json">
+                <format> {
+				             "id": "$1",
+				             "fiscal_code": "$2",
+				             "cod_invio": "$3",
+				             "tipo_invio": "$4"
+				         }
+				</format>
+                <args>
+                    <arg evaluator="xml" expression="$ctx:MESSAGE_ID"/>
+                    <arg evaluator="xml" expression="$ctx:FISCAL_CODE"/>
+                    <arg evaluator="xml" expression="$ctx:LogID"/>
+                    <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+                </args>
+            </payloadFactory>
+        </case>
+        <case regex="INVALID_PAYLOAD">
+            <property description="MESSAGE_ID" name="MESSAGE_ID" scope="default" type="STRING" value="non generato"/>
+            <property description="SC_APPIO" name="SC_APPIO" scope="default" type="STRING" value="400"/>
+            <property description="SC_DESC_APPIO" name="SC_DESC_APPIO" scope="default" type="STRING" value="Invalid Payload"/>
+            <property name="messageType" scope="axis2" type="STRING" value="application/problem+json"/>
+            <payloadFactory description="MsgRispostaErrore" media-type="json">
+                <format> {
+                             "id": "$1",
+                             "fiscal_code": "$2",
+                             "cod_invio": "$3",
+                             "tipo_invio": "$4",
+                             "errore": {
+                                 "title": "$5",
+                                 "status": $6,
+                                 "detail": "$7"
+                             }
+                         }
+				</format>
+                <args>
+                    <arg evaluator="xml" expression="$ctx:MESSAGE_ID"/>
+                    <arg evaluator="xml" expression="$ctx:FISCAL_CODE"/>
+                    <arg evaluator="xml" expression="$ctx:LogID"/>
+                    <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+                    <arg evaluator="xml" expression="$ctx:SC_DESC_APPIO"/>
+                    <arg evaluator="xml" expression="$ctx:SC_APPIO"/>
+                    <arg evaluator="xml" expression="get-property('ERROR_DETAIL')"/>
+                </args>
+            </payloadFactory>
+        </case>
+        <case regex="TIPO_INVIO_INVALIDO">
+            <property description="MESSAGE_ID" name="MESSAGE_ID" scope="default" type="STRING" value="non generato"/>
+            <property description="SC_APPIO" name="SC_APPIO" scope="default" type="STRING" value="401"/>
+            <property description="SC_DESC_APPIO" name="SC_DESC_APPIO" scope="default" type="STRING" value="Unauthorized"/>
+            <property name="messageType" scope="axis2" type="STRING" value="application/problem+json"/>
+            <payloadFactory description="MsgRispostaErrore" media-type="json">
+                <format> {
+                             "id": "$1",
+                             "fiscal_code": "$2",
+                             "cod_invio": "$3",
+                             "tipo_invio": "$4",
+                             "errore": {
+                                 "title": "$5",
+                                 "status": $6,
+                                 "detail": "Il tipo_invio: $4 non e' ammesso"
+                             }
+                         }
+				</format>
+                <args>
+                    <arg evaluator="xml" expression="$ctx:MESSAGE_ID"/>
+                    <arg evaluator="xml" expression="$ctx:FISCAL_CODE"/>
+                    <arg evaluator="xml" expression="$ctx:LogID"/>
+                    <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+                    <arg evaluator="xml" expression="$ctx:SC_DESC_APPIO"/>
+                    <arg evaluator="xml" expression="$ctx:SC_APPIO"/>
+                </args>
+            </payloadFactory>
+            <!-- Sovrascrivo il valore di tipo_invio per la tabella -->
+            <property description="TipoInvio" name="TIPO_INVIO" scope="default" type="STRING" value="NON_AMMESSO"/>
+        </case>
+        <case regex="ERRORE_LATO_DB">
+            <property description="MESSAGE_ID" name="MESSAGE_ID" scope="default" type="STRING" value="non generato"/>
+            <property description="SC_APPIO" name="SC_APPIO" scope="default" type="STRING" value="500"/>
+            <property description="SC_DESC_APPIO" name="SC_DESC_APPIO" scope="default" type="STRING" value="The message cannot be delivered"/>
+            <property name="messageType" scope="axis2" type="STRING" value="application/problem+json"/>
+            <payloadFactory description="MsgRispostaErrore" media-type="json">
+                <format> {
+                             "id": "$1",
+                             "fiscal_code": "$2",
+                             "cod_invio": "$3",
+                             "tipo_invio": "$4",
+                             "errore": {
+                                 "title": "$5",
+                                 "status": $6,
+                                 "detail": "Errore di comunicazione con il DB"
+                             }
+                         }
+				</format>
+                <args>
+                    <arg evaluator="xml" expression="$ctx:MESSAGE_ID"/>
+                    <arg evaluator="xml" expression="$ctx:FISCAL_CODE"/>
+                    <arg evaluator="xml" expression="$ctx:LogID"/>
+                    <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+                    <arg evaluator="xml" expression="$ctx:SC_DESC_APPIO"/>
+                    <arg evaluator="xml" expression="$ctx:SC_APPIO"/>
+                </args>
+            </payloadFactory>
+        </case>
+        <default>
+            <property description="MESSAGE_ID" name="MESSAGE_ID" scope="default" type="STRING" value="non generato"/>
+            <property description="SC_APPIO" expression="json-eval($.status)" name="SC_APPIO" scope="default" type="STRING"/>
+            <property description="SC_DESC_APPIO" expression="json-eval($.title)" name="SC_DESC_APPIO" scope="default" type="STRING"/>
+            <property name="messageType" scope="axis2" type="STRING" value="application/problem+json"/>
+            <payloadFactory description="MsgRispostaErrore" media-type="json">
+                <format> {
+                             "id": "$1",
+                             "fiscal_code": "$2",
+                             "cod_invio": "$3",
+                             "tipo_invio": "$4",
+                             "errore": {
+                                 "title": "$5",
+                                 "status": "$6",
+                                 "detail": "$7"
+                             }
+                         }
+				</format>
+                <args>
+                    <arg evaluator="xml" expression="$ctx:MESSAGE_ID"/>
+                    <arg evaluator="xml" expression="$ctx:FISCAL_CODE"/>
+                    <arg evaluator="xml" expression="$ctx:LogID"/>
+                    <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+                    <arg evaluator="json" expression="$.title"/>
+                    <arg evaluator="json" expression="$.status"/>
+                    <arg evaluator="json" expression="$.detail"/>
+                </args>
+            </payloadFactory>
+        </default>
+    </switch>
+    <!-- Stampo il risultato finale del flusso -->
+    <log category="DEBUG" description="AppIOFinalResult" level="custom">
+        <property expression="$ctx:APPIO_FINAL_RESULT" name="AppIOFinalResult"/>
+    </log>
+    <!-- Stampo la response per il client -->
+    <property description="Client Response" expression="json-eval($.)" name="RESPONSE" scope="default" type="STRING"/>
+    <log category="DEBUG" description="Client Response" level="custom">
+        <property expression="$ctx:RESPONSE" name="Response"/>
+    </log>
+    <!-- Chiedo al DB il valore di ID_ESITI (PK su IO_ESITI) -->
+    <property description="RemoveResponseCode" name="SC_ACCEPTED" scope="axis2" type="STRING" value="false"/>
+    <header name="Action" scope="default" value="calcoloIDLogAppIO"/>
+    <payloadFactory description="DBRequest" media-type="xml">
+        <format>
+            <calcoloIDLogAppIO/>
+        </format>
+        <args/>
+    </payloadFactory>
+    <call description="calcoloIDLogAppIO">
+        <endpoint>
+            <address format="soap11" statistics="enable" trace="enable" uri="http://localhost:8280/services/ClientDispatcher_DS"/>
+        </endpoint>
+    </call>
+    <!-- Verifico la risposta del DB -->
+    <switch description="Switch su SC_DB" source="$axis2:HTTP_SC">
+        <case regex="200">
+            <property description="ID_ESITI" expression="json-eval($.nextval.ID_ESITI_DB)" name="ID_ESITI" scope="default" type="STRING"/>
+            <log category="DEBUG" description="ID_ESITI" level="custom">
+                <property expression="$ctx:ID_ESITI" name="ID_ESITI"/>
+            </log>
+        </case>
+        <default>
+            <log category="ERROR" description="ID_ESITI" level="custom">
+                <property name="ID_ESITI" value="NON CREATO DAL DB!!!"/>
+            </log>
+        </default>
+    </switch>
+    <!-- Scrivo i log sul DB -->
+    <property description="RemoveResponseCode" name="SC_ACCEPTED" scope="axis2" type="STRING" value="false"/>
+    <header name="Action" scope="default" value="registraLogAppIO"/>
+    <payloadFactory description="DBRequest" media-type="xml">
+        <format>
+            <registraLogAppIO>
+                <ID_ESITI>$1</ID_ESITI>
+                <CODICE_FISCALE>$2</CODICE_FISCALE>
+                <TIPO_INVIO>$3</TIPO_INVIO>
+                <DATA_INIZIO>$4</DATA_INIZIO>
+                <DATA_FINE>$5</DATA_FINE>
+                <RESPONSE_CODE>$6</RESPONSE_CODE>
+                <RESPONSE_DESC>$7</RESPONSE_DESC>
+                <MESSAGE_ID>$8</MESSAGE_ID>
+                <NOTE>$9</NOTE>
+                <COD_INVIO>$10</COD_INVIO>
+                <ID_CODA>$11</ID_CODA>
+                <REQUEST>$12</REQUEST>
+                <RESPONSE>$13</RESPONSE>
+                <IS_PAYMENT>$14</IS_PAYMENT>
+                <NOTICE_NUMBER>$15</NOTICE_NUMBER>
+                <INVIO_TENTATO>$16</INVIO_TENTATO>
+                <TIPO_DESC_ESTESA>$17</TIPO_DESC_ESTESA>
+            </registraLogAppIO>
+        </format>
+        <args>
+            <arg evaluator="xml" expression="$ctx:ID_ESITI"/>
+            <arg evaluator="xml" expression="$ctx:FISCAL_CODE"/>
+            <arg evaluator="xml" expression="$ctx:TIPO_INVIO"/>
+            <arg evaluator="xml" expression="$ctx:DATA_INIZIO"/>
+            <arg evaluator="xml" expression="$ctx:DATA_FINE"/>
+            <arg evaluator="xml" expression="$ctx:SC_APPIO"/>
+            <arg evaluator="xml" expression="$ctx:SC_DESC_APPIO"/>
+            <arg evaluator="xml" expression="$ctx:MESSAGE_ID"/>
+            <arg evaluator="xml" expression="$ctx:NOTE"/>
+            <arg evaluator="xml" expression="$ctx:LogID"/>
+            <arg evaluator="xml" expression="$ctx:ID_CODA"/>
+            <arg evaluator="xml" expression="$ctx:REQUEST" literal="true"/>
+            <arg evaluator="xml" expression="$ctx:RESPONSE" literal="true"/>
+            <arg evaluator="xml" expression="$ctx:IS_PAYMENT"/>
+            <arg evaluator="xml" expression="$ctx:NOTICE_NUMBER"/>
+            <arg evaluator="xml" expression="$ctx:INVIO_TENTATO"/>
+            <arg evaluator="xml" expression="$ctx:TIPO_DESC_ESTESA"/>
+        </args>
+    </payloadFactory>
+    <log category="DEBUG" description="DBRequest" level="custom">
+        <property expression="json-eval($.)" name="DBRequest"/>
+    </log>
+    <call description="DBLog">
+        <endpoint>
+            <address format="soap11" statistics="enable" trace="enable" uri="http://localhost:8280/services/ClientDispatcher_DS"/>
+        </endpoint>
+    </call>
+    <!-- Verifico la risposta del DB -->
+    <property description="SC_DB" expression="$axis2:HTTP_SC" name="SC_DB" scope="default" type="STRING"/>
+    <property description="SC_DESC_DB" expression="$axis2:HTTP_SC_DESC" name="SC_DESC_DB" scope="default" type="STRING"/>
+    <switch description="Switch su SC_DB" source="$ctx:SC_DB">
+        <case regex="202">
+            <log category="DEBUG" description="DBResponseOK" level="custom">
+                <property name="DBResponse" value="OK"/>
+            </log>
+            <property description="DB_RESULT" name="DB_RESULT" scope="default" type="STRING" value="Record inserito"/>
+        </case>
+        <default>
+            <log category="WARN" description="DBResponseKO" level="custom">
+                <property name="DBResponse" value="KO!"/>
+            </log>
+            <log category="DEBUG" description="SC_DB" level="custom">
+                <property expression="$ctx:SC_DB" name="SC_DB"/>
+            </log>
+            <log category="DEBUG" description="SC_DESC_DB" level="custom">
+                <property expression="$ctx:SC_DESC_DB" name="SC_DESC_DB"/>
+            </log>
+            <log category="DEBUG" description="DBResponse" level="custom">
+                <property expression="json-eval($.)" name="DBResponse"/>
+            </log>
+            <property description="DB_RESULT" name="DB_RESULT" scope="default" type="STRING" value="Errore inserimento record"/>
+        </default>
+    </switch>
+    <!-- Re-impostiamo SC, SC_DESC e paylaod per il client aggiungendo esito scrittura DB -->
+    <property description="RemoveResponseCode" name="SC_ACCEPTED" scope="axis2" type="STRING" value="false"/>
+    <property description="SetSC" expression="$ctx:SC_APPIO" name="HTTP_SC" scope="axis2" type="STRING"/>
+    <property description="SetSC_DESC" expression="$ctx:SC_DESC_APPIO" name="HTTP_SC_DESC" scope="axis2" type="STRING"/>
+    <property name="messageType" scope="axis2" type="STRING" value="application/json"/>
+    <payloadFactory description="Restore Initial Message" media-type="json">
+        <format>$1</format>
+        <args>
+            <arg evaluator="xml" expression="$ctx:RESPONSE"/>
+        </args>
+    </payloadFactory>
+    <!-- Aggiungo il risultato del DB al payload -->
+    <script description="Aggiungo DB_RESULT al payload" language="nashornJs"><![CDATA[{
+    	var payload = mc.getPayloadJSON();
+    	payload.db_result = mc.getProperty('DB_RESULT');
+    	mc.setPayloadJSON(payload);
+    	}]]></script>
+    <log category="DEBUG" description="OutSeqEnd" level="custom">
+        <property name="DispatcherUni_OutSeq" value="END"/>
+    </log>
+    <log description="End" level="custom">
+        <property name="DispatcherUni" value="END"/>
+    </log>
+    <respond/>
+</sequence>

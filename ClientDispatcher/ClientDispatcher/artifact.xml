@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><artifacts>
+    <artifact name="Client_Dispatcher_FaultSeq" groupId="it.appio.dispatcher.sequence" version="1.0.0" type="synapse/sequence" serverRole="EnterpriseServiceBus">
+        <file>src/main/synapse-config/sequences/Client_Dispatcher_FaultSeq.xml</file>
+    </artifact>
+    <artifact name="Client_Dispatcher_InSeq" groupId="it.appio.dispatcher.sequence" version="1.0.0" type="synapse/sequence" serverRole="EnterpriseServiceBus">
+        <file>src/main/synapse-config/sequences/Client_Dispatcher_InSeq.xml</file>
+    </artifact>
+    <artifact name="Client_Dispatcher_OutSeq" groupId="it.appio.dispatcher.sequence" version="1.0.0" type="synapse/sequence" serverRole="EnterpriseServiceBus">
+        <file>src/main/synapse-config/sequences/Client_Dispatcher_OutSeq.xml</file>
+    </artifact>
+</artifacts>

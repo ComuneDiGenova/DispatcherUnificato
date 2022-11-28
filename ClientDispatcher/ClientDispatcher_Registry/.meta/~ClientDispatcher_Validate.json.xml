@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?><resource name="ClientDispatcher_Validate.json" isCollection="false" path="/_system/governance/ClientDispatcher/schemas/ClientDispatcher_Registry/ClientDispatcher_Validate.json" registryUrl="https://localhost:9443/registry" status="added">
+    <mediaType>application/json</mediaType>
+</resource>
