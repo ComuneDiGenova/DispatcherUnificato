@@ -1,0 +1,308 @@
+openapi: 3.0.0
+info:
+  x-api-id: be447a40-ee4z-11e9-81b4-2a2ae2dbcce4
+  x-audience: external-public
+  x-summary: 'AppIO - Client Dispatcher'
+  title: 'AppIO - Client Dispatcher'
+  version: 2.0.0
+  description: API dedicate alle notifiche tramite AppIO
+  termsOfService: http://swagger.io/terms/
+  license:
+    name: 'GNU General Public License, version 2'
+    url: 'https://www.gnu.org/licenses/old-licenses/gpl-2.0.html'
+  contact:
+    email: m.montobbio@liguriadigitale.it
+    name: Michele Montobbio
+security:
+  - oauthSecurity:
+    - utentiEsterni
+paths:
+  /status:
+    get:
+      tags:
+        - AppIO - Notifiche
+      description: "Test del servizio"
+      operationId: "test"
+      responses:
+        '200':
+          description: Ok
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+        '403':
+          description: You are not allowed here
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+  /notifica:
+    post:
+      tags:
+        - AppIO - Notifiche
+      description: Notifica all'infrastruttura AppIO un messaggio composto secondo le sue specifiche
+      operationId: "invioMessaggio"
+      requestBody:
+        description: Dati del messaggio da inviare
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Richiesta' 
+      responses:
+        '201':
+          description: Messagge created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RispostaOk"
+              example:
+                id: 01BX9NSMKVXXS5PSP2FATZMYYY,
+                fiscal_code: ABCDEF12A34B567C,
+                cod_invio: APPIO^d875cc53-96b5-4f9b-b424-6cc2b14e7a95,
+                tipo_invio: EL_TESSERA
+                db_result: Record inserito
+        '400':
+          description: Invalid paylaod
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+        '403':
+          description: You are not allowed here
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+        '404':
+          description: Profile not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+        '405':
+          description: The user is not subscribed to this service
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+        '429':
+          description: Too many requests
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+        '500':
+          description: The message cannot be delivered
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Errore"
+servers:
+  - url: https://apitest.comune.genova.it:28243/dispatcherUnificato
+    description: Server di test
+  - url: https://apiprod.comune.genova.it:28243/dispatcherUnificato
+    description: Server di prod
+components:
+  schemas:
+    Richiesta:
+      title: Richiesta
+      type: object
+      required:
+        - fiscal_code
+        - token
+        - tipo_invio
+        - content
+      properties:
+        fiscal_code:
+          title: Codice Fiscale
+          description: Codice Fiscale del Cittadino
+          type: string
+        token:
+          title: Token del servizio
+          description: Token del servizio AppIO da invocare 
+          type: string
+        time_to_live:
+          title: TTL per AppIO
+          description: Tempo massimo tentativi di invio (in secondi)
+          type: integer
+          format: "int32"
+          nullable: true
+          default: 3600
+        tipo_invio:
+          title: Tipo Invio
+          description: Nome dello specifico servizio invocato. Tale valore deve essere presente sul DB nella tabella IO_CONFIGURAZIONE. Al momento dell'aggiunta di un nuovo servizio client, tale valore va concordato ed inserito sul DB prima della messa in produzione del servizio
+          type: string
+        id_coda:
+          title: ID Coda
+          description: Indica un eventuale ID univoco del messaggio nella coda di invio. Necessario per invii massivi via batch
+          type: string
+          nullable: true
+          maxLength: 32
+        note:
+          title: Note
+          description: Eventuali note aggiuntive da inserire nel DB per il singolo record
+          type: string
+          nullable: true
+        content:
+          title: Content
+          type: object
+          required:
+            - subject
+            - markdown
+          properties:
+            subject:
+              title: Intestazione dell'invio
+              description: Intestazione dell'invio
+              type: string
+              minLength: 10
+              maxLength: 120
+              example: "Titolo di esempio"
+            markdown:
+              title: Testo del messaggio
+              description: Testo del messaggio da inviare (in formato markdown)
+              type: string
+              minLength: 80
+              maxLength: 10000
+            due_date:
+              title: Due date
+              description: Campo data/ora in formato ISO-8601 (YYYY-MM-DDThh:mm:ssTZD)
+              type: string
+              format: date-time
+              nullable: true
+              example: '2021-02-14T09:30:21Z'
+            payment_data:
+              title: Payment data
+              description: Dati per il pagamento PagoPA, se disponibile
+              type: object
+              properties:
+                amount:
+                  title: Importo
+                  description: L'importo da pagare in centesimi di euro (obbligatorio nel caso di pagamento)
+                  type: integer
+                  format: "int64"
+                  minimum: 1
+                  maximum: 9999999999
+                  example: 100
+                notice_number:
+                  title: Numero Avviso
+                  description: Il campo numero avviso di PagoPA per identificare il pagamento (obbligatorio nel caso di pagamento)
+                  type: string
+                  pattern: ^[0123][0-9]{17}$
+                invalid_after_due_date:
+                  title: Invalid after due date
+                  description: Flag che invalida il pagamento dopo una certa data
+                  type: boolean
+                  nullable: true
+                  default: false
+    RispostaOk:
+      title: RispostaOk
+      type: object
+      required:
+        - id
+        - fiscal_code
+        - cod_invio
+        - tipo_invio
+        - db_result
+      properties:
+        id:
+          title: ID messaggio
+          description: ID del messaggio creato da AppIO
+          type: string
+        fiscal_code:
+          title: Codice Fiscale
+          description: Codice Fiscale del Cittadino
+          type: string
+        cod_invio:
+          title: Codice Invio
+          description: Codice univoco generato da WSO2 per tracciare la chiamata
+          type: string
+        tipo_invio:
+          title: Tipo Invio
+          description: Label che indica lo specifico servizio invocato (esempio EL_TESSERA)
+          type: string
+        db_result:
+          title: DB Result
+          description: Risultato della scrittura su DB
+          type: string
+          enum: [Record inserito, Errore inserimento record]
+    Errore:
+      title: RispostaErrore
+      type: object
+      required:
+        - id
+        - fiscal_code
+        - cod_invio
+        - tipo_invio
+        - errore
+        - db_result
+      properties:
+        id:
+          title: ID messaggio
+          description: ID del messaggio creato da AppIO
+          type: string
+          default: "non generato"
+        fiscal_code:
+          title: Codice Fiscale
+          description: Codice Fiscale del Cittadino
+          type: string
+        cod_invio:
+          title: Codice Invio
+          description: Codice univoco generato da WSO2 per tracciare la chiamata
+          type: string
+        tipo_invio:
+          title: Tipo Invio
+          description: Label che indica lo specifico servizio invocato (esempio EL_TESSERA)
+          type: string  
+        errore:
+          title: Dettagli errore
+          type: object
+          required:
+            - title
+            - status
+            - detail
+          properties:
+            title:
+              title: Title
+              description: Titolo errore
+              example: "Profile not found"
+              type: string
+            status:
+              title: Status
+              description: Codice HTTP errore
+              example: 404
+              type: integer
+              format: "int32"
+            detail:
+              title: Detail
+              description: Dettaglio errore
+              example: "The profile you requested was not found in the system"
+              type: string
+        db_result:
+          title: DB Result
+          description: Risultato della scrittura su DB
+          type: string
+          enum: [Record inserito, Errore inserimento record]      
+  securitySchemes:
+    oauthSecurity:
+      type: oauth2
+      description: Schema di sicurezza basato su oauth
+      flows:
+        authorizationCode:
+          authorizationUrl: 'https://api.comune.genova.it/oauth2/authorize'
+          tokenUrl: 'https://api.comune.genova.it/oauth2/token'
+          refreshUrl: 'https://api.comune.genova.it/oauth2/token'
+          scopes:
+            backoffice: autorizzazioni concesse alle operazioni effettuate dai sistemi di backoffice
+            utentiInterni: autorizzazioni concesse agli utenti interni al comune di genova
+            utentiEsterni: autorizzazioni concesse a generici utenti esterni al comune di genova
+tags:
+  - name: AppIO - Notifiche

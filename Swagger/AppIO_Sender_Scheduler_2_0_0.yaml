@@ -1,0 +1,234 @@
+openapi: 3.0.0
+info:
+  x-api-id: be447a40-ee4z-11e9-81b4-2a2ae2dbcce4
+  x-audience: external-public
+  x-summary: 'AppIO - Sender Scheduler'
+  title: 'AppIO - Sender Scheduler'
+  version: 2.0.0
+  description: API dedicate all'invio schedulato di messaggi AppIO
+  termsOfService: http://swagger.io/terms/
+  license:
+    name: 'GNU General Public License, version 2'
+    url: 'https://www.gnu.org/licenses/old-licenses/gpl-2.0.html'
+  contact:
+    email: m.montobbio@liguriadigitale.it
+    name: Michele Montobbio
+security:
+  - oauthSecurity:
+    - utentiEsterni
+paths:
+  /status:
+    get:
+      tags:
+        - AppIO - Sender
+      description: "Test del servizio"
+      operationId: "test"
+      responses:
+        '200':
+          description: Ok
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+        '403':
+          description: You are not allowed here
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+  /timer:
+    post:
+      tags:
+        - AppIO - Sender
+      description: "Creazione di un nuovo timer per il caricamento della coda"
+      operationId: "loaderCreate"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RichiestaTimer'
+        description: Dati del timer
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RispostaOkTimerPost"
+        '406':
+          description: Not Acceptable
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+              example:
+                error_title: Errore schedulazione timer
+                error_code: "406"
+                error_desc: Unable to store Job 'TimerTest' because one already exists with this identification.
+        '500':
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+              example:
+                error_title: Internal error
+                error_code: "500"
+                error_desc: Details
+    get:
+      tags:
+        - AppIO - Sender
+      description: "Elenco di tutti i timer attivi"
+      operationId: "loaderList"
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RispostaOkTimerGet"
+        '204':
+          description: No Content
+        '500':
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+              example:
+                error_title: Errore estrazione lista timer
+                error_code: "500"
+                error_desc: Details
+    delete:
+      tags:
+        - AppIO - Sender
+      description: "Cancellazione di un timer"
+      operationId: "loaderDelete"
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RispostaOkTimerDelete"
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+              example:
+                error_title: Errore cancellazione timer
+                error_code: "404"
+                error_desc: Timer non presente
+        '500':
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+              example:
+                error_title: Errore cancellazione timer
+                error_code: "500"
+                error_desc: Details
+servers:
+  - url: https://apitest.comune.genova.it:28243/appio/sender
+    description: Server di test
+  - url: https://apiprod.comune.genova.it:28243/appio/sender
+    description: Server di prod
+components:
+  schemas:
+    RichiestaTimer:
+      title: RichiestaTimer
+      type: object
+      required:
+        - cron_schedule
+        - timer_name
+      properties:
+        cron_schedule:
+          title: Orario schedulazione
+          description: Schedulazione in formato crontab
+          type: string
+          example: 30 * 07-23 * * ?
+        timer_name:
+          title: Timer name
+          description: Nome univoco del timer
+          type: string
+        initial_offset_ms:
+          title: Offset iniziale
+          description: Tempo di attesa dopo aver creato il timer (millisec)
+          type: integer
+          format: "int32"
+          nullable: true
+          default: 10000
+    RispostaOkTimerPost:
+      title: RispostaOkTimerPost
+      type: object
+      required:
+        - timer_status
+      properties:
+        timer_status:
+          title: Timer status
+          description: Risultato della creazione
+          type: string
+          example: created
+    RispostaOkTimerGet:
+      title: RispostaOkTimerGet
+      type: array
+      items:
+        $ref: '#/components/schemas/RichiestaTimer'
+    RispostaOkTimerDelete:
+      title: RispostaOkTimerDelete
+      type: object
+      required:
+        - timer_status
+      properties:
+        timer_status:
+          title: Timer status
+          description: Risultato della cancellazione
+          type: string
+          example: deleted
+    ErroreGenerico:
+      title: ErroreGenerico
+      type: object
+      required:
+        - error_title
+        - error_code
+        - error_desc
+      properties:
+        error_title:
+          title: Title
+          description: Titolo errore
+          type: string
+        error_code:
+          title: Codice
+          description: Codice HTTP errore
+          type: string
+        error_desc:
+          title: Descrizione
+          description: Dettaglio errore
+          type: string
+  securitySchemes:
+    oauthSecurity:
+      type: oauth2
+      description: Schema di sicurezza basato su oauth
+      flows:
+        authorizationCode:
+          authorizationUrl: 'https://api.comune.genova.it/oauth2/authorize'
+          tokenUrl: 'https://api.comune.genova.it/oauth2/token'
+          refreshUrl: 'https://api.comune.genova.it/oauth2/token'
+          scopes:
+            backoffice: autorizzazioni concesse alle operazioni effettuate dai sistemi di backoffice
+            utentiInterni: autorizzazioni concesse agli utenti interni al comune di genova
+            utentiEsterni: autorizzazioni concesse a generici utenti esterni al comune di genova
+tags:
+  - name: AppIO - Sender
