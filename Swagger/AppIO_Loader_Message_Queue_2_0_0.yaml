@@ -39,45 +39,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErroreGenerico"
   /timer:
-    post:
-      tags:
-        - AppIO - Loader
-      description: "Creazione di un nuovo timer per il caricamento della coda"
-      operationId: "loaderCreate"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RichiestaTimer'
-        description: Dati del timer
-        required: true
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RispostaOkTimerPost"
-        '406':
-          description: Not Acceptable
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ErroreGenerico"
-              example:
-                error_title: Errore schedulazione timer
-                error_code: "406"
-                error_desc: Unable to store Job 'TimerTest' because one already exists with this identification.
-        '500':
-          description: Internal Server Error
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/ErroreGenerico"
-              example:
-                error_title: Internal error
-                error_code: "500"
-                error_desc: Details
     get:
       tags:
         - AppIO - Loader
@@ -138,6 +99,46 @@ paths:
                 $ref: "#/components/schemas/ErroreGenerico"
               example:
                 error_title: Errore cancellazione timer
+                error_code: "500"
+                error_desc: Details
+  /scolastico/eduBollettinoRisto:
+    post:
+      tags:
+        - AppIO - Loader
+      description: "Esempio di creazione di un nuovo timer per il caricamento della coda"
+      operationId: "loaderCreate"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RichiestaTimer'
+        description: Dati del timer
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RispostaOkTimerPost"
+        '406':
+          description: Not Acceptable
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+              example:
+                error_title: Errore schedulazione timer
+                error_code: "406"
+                error_desc: Unable to store Job 'TimerTest' because one already exists with this identification.
+        '500':
+          description: Internal Server Error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ErroreGenerico"
+              example:
+                error_title: Internal error
                 error_code: "500"
                 error_desc: Details
 servers:
