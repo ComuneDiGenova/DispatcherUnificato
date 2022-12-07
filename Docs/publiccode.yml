@@ -8,53 +8,6 @@ categories:
   - digital-citizenship
   - instant-messaging
   - mobile-payment
-description:
-  it:
-    features:
-      - Invio sincrono di messaggi
-      - Invio asincrono di messaggi
-    genericName: Dispatcher Unificato
-    longDescription: |
-      Lo scopo del progetto è l'invio di messaggi AppIO ai privati cittadini con
-      il fine di migliorare e semplificare la comunicazione con le istituzioni
-      pubbliche. Tale invio viene effettuato con l'ausilio di specifici servizi
-      di backend realizzati da PagoPA. Il campo di applicazione è molteplice,
-      visto che titolo e testo sono arbitrari e quindi adattabili ad ogni
-      esigenza informativa, compresa l'opzione di pagamento di un bollettino
-      PagoPA già emesso e di cui si conosce il codice IUV e l'importo. Il
-      software permette sia di inviare messaggi in maniera sincrona, invocando
-      API dedicate, sia in maniera asincrona riempiendo una coda di invio su DB.
-    shortDescription: Schedulatore per l'invio di messaggi AppIO ai cittadini
-developmentStatus: stable
-it:
-  conforme:
-    gdpr: false
-    lineeGuidaDesign: false
-    misureMinimeSicurezza: false
-    modelloInteroperabilita: false
-  countryExtensionVersion: '0.2'
-  piattaforme:
-    anpr: false
-    cie: false
-    pagopa: true
-    spid: false
-legal:
-  license: GPL-3.0-only
-localisation:
-  availableLanguages:
-    - it
-  localisationReady: false
-maintenance:
-  type: none
-name: AppIO Dispatcher Unificato
-platforms:
-  - web
-releaseDate: '2022-12-23'
-softwareType: standalone/web
-url: 'https://github.com/ComuneDiGenova/DispatcherUnificato'
-usedBy:
-  - Comune di Genova
-softwareVersion: 1.0.0
 dependsOn:
   open:
     - name: Java OpenJDK
@@ -83,3 +36,75 @@ dependsOn:
       version: ''
       versionMax: ''
       versionMin: '12'
+description:
+  it:
+    features:
+      - Invio sincrono di messaggi
+      - Invio asincrono di messaggi
+    genericName: Dispatcher Unificato
+    longDescription: |
+      Lo scopo del progetto è l'invio di messaggi AppIO ai privati cittadini con
+
+
+      il fine di migliorare e semplificare la comunicazione con le istituzioni
+
+
+      pubbliche. Tale invio viene effettuato con l'ausilio di specifici servizi
+
+
+      di backend realizzati da PagoPA. Il campo di applicazione è molteplice,
+
+
+      visto che titolo e testo sono arbitrari e quindi adattabili ad ogni
+
+
+      esigenza informativa, compresa l'opzione di pagamento di un bollettino
+
+
+      PagoPA già emesso e di cui si conosce il codice IUV e l'importo. Il
+
+
+      software permette sia di inviare messaggi in maniera sincrona, invocando
+
+
+      API dedicate, sia in maniera asincrona riempiendo una coda di invio su DB.
+    shortDescription: Schedulatore per l'invio di messaggi AppIO ai cittadini
+developmentStatus: stable
+it:
+  conforme:
+    gdpr: false
+    lineeGuidaDesign: false
+    misureMinimeSicurezza: false
+    modelloInteroperabilita: false
+  countryExtensionVersion: '0.2'
+  piattaforme:
+    anpr: false
+    cie: false
+    pagopa: true
+    spid: false
+  riuso:
+    codiceIPA: c_d969
+legal:
+  license: EUPL-1.2
+localisation:
+  availableLanguages:
+    - it
+  localisationReady: false
+maintenance:
+  contacts:
+    - affiliation: Liguria Digitale spa
+      email: pincopallo@finto.it
+      name: Pinco Pallo
+  contractors:
+    - name: Liguria Digitale spa
+      until: '2022-12-31'
+  type: contract
+name: Dispatcher Unificato per AppIO
+platforms:
+  - web
+releaseDate: '2022-09-30'
+softwareType: standalone/web
+softwareVersion: 1.0.0
+url: 'https://github.com/ComuneDiGenova/DispatcherUnificato'
+usedBy:
+  - Comune di Genova
