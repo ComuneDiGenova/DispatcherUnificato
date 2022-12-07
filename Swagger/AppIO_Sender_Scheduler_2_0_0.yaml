@@ -11,8 +11,8 @@ info:
     name: 'GNU General Public License, version 2'
     url: 'https://www.gnu.org/licenses/old-licenses/gpl-2.0.html'
   contact:
-    email: m.montobbio@liguriadigitale.it
-    name: Michele Montobbio
+    email: r.delorenzi@liguriadigitale.it
+    name: Roberto De Lorenzi
 security:
   - oauthSecurity:
     - utentiEsterni

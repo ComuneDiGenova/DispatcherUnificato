@@ -46,25 +46,33 @@ description:
       Lo scopo del progetto è l'invio di messaggi AppIO ai privati cittadini con
 
 
+
       il fine di migliorare e semplificare la comunicazione con le istituzioni
+
 
 
       pubbliche. Tale invio viene effettuato con l'ausilio di specifici servizi
 
 
+
       di backend realizzati da PagoPA. Il campo di applicazione è molteplice,
+
 
 
       visto che titolo e testo sono arbitrari e quindi adattabili ad ogni
 
 
+
       esigenza informativa, compresa l'opzione di pagamento di un bollettino
+
 
 
       PagoPA già emesso e di cui si conosce il codice IUV e l'importo. Il
 
 
+
       software permette sia di inviare messaggi in maniera sincrona, invocando
+
 
 
       API dedicate, sia in maniera asincrona riempiendo una coda di invio su DB.
@@ -93,8 +101,8 @@ localisation:
 maintenance:
   contacts:
     - affiliation: Liguria Digitale spa
-      email: pincopallo@finto.it
-      name: Pinco Pallo
+      email: r.delorenzi@liguriadigitale.it
+      name: Roberto De Lorenzi
   contractors:
     - name: Liguria Digitale spa
       until: '2022-12-31'
