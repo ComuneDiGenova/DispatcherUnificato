@@ -8,8 +8,8 @@ info:
   description: API dedicate al caricamento della coda messaggi di AppIO
   termsOfService: http://swagger.io/terms/
   license:
-    name: 'GNU General Public License, version 2'
-    url: 'https://www.gnu.org/licenses/old-licenses/gpl-2.0.html'
+    name: 'EUROPEAN UNION PUBLIC LICENCE v. 1.2'
+    url: 'https://eupl.eu/1.2/en/'
   contact:
     email: r.delorenzi@liguriadigitale.it
     name: Roberto De Lorenzi
@@ -142,9 +142,9 @@ paths:
                 error_code: "500"
                 error_desc: Details
 servers:
-  - url: https://apitest.comune.genova.it:28243/appio/loader
+  - url: https://apitest.comune.x.it/dispatcherUnificato
     description: Server di test
-  - url: https://apiprod.comune.genova.it:28243/appio/loader
+  - url: https://apiprod.comune.x.it/dispatcherUnificato
     description: Server di prod
 components:
   schemas:
@@ -224,12 +224,12 @@ components:
       description: Schema di sicurezza basato su oauth
       flows:
         authorizationCode:
-          authorizationUrl: 'https://api.comune.genova.it/oauth2/authorize'
-          tokenUrl: 'https://api.comune.genova.it/oauth2/token'
-          refreshUrl: 'https://api.comune.genova.it/oauth2/token'
+          authorizationUrl: 'https://api.comune.x.it/oauth2/authorize'
+          tokenUrl: 'https://api.comune.x.it/oauth2/token'
+          refreshUrl: 'https://api.comune.x.it/oauth2/token'
           scopes:
             backoffice: autorizzazioni concesse alle operazioni effettuate dai sistemi di backoffice
-            utentiInterni: autorizzazioni concesse agli utenti interni al comune di genova
-            utentiEsterni: autorizzazioni concesse a generici utenti esterni al comune di genova
+            utentiInterni: autorizzazioni concesse agli utenti interni al comune di x
+            utentiEsterni: autorizzazioni concesse a generici utenti esterni al comune di x
 tags:
   - name: AppIO - Loader
