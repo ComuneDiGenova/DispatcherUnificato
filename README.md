@@ -30,8 +30,8 @@ L'elenco delle tabelle usate è il seguente:
 ## Contatti
 
 * Amministrazione proprietaria: Comune di Genova
-* Soggetto incaricato al mantenimento: TBD
-* Contatto e-mail referente di progetto (per segnalazioni e richiesta informazioni): TBD
-* Contatto e-mail presso l'amministrazione: TBD
+* Soggetto incaricato al mantenimento: Liguria Digitale spa
+* Contatto e-mail referente di progetto (per segnalazioni e richiesta informazioni): r.delorenzi@liguriadigitale.it
+* Contatto e-mail presso l'amministrazione: mbabbei@comune.genova.it
 * Gestione segnalazioni: **tramite issues github**
 
