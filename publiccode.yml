@@ -80,7 +80,7 @@ description:
 developmentStatus: stable
 it:
   conforme:
-    gdpr: false
+    gdpr: true
     lineeGuidaDesign: false
     misureMinimeSicurezza: false
     modelloInteroperabilita: false
